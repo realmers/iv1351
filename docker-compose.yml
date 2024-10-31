@@ -1,0 +1,16 @@
+# postgres server
+
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=kYgLpoyUEUGlTTYdPBseuDPQz8d2BcBidZzCvTaUCm4V4VxMi842DJXSkwtzkfU
+      - POSTGRES_USER=iv1351
+      - POSTGRES_DB=iv1351
+
+volumes:
+  postgres_data:
