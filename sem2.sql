@@ -1,13 +1,61 @@
-
 SET search_path TO public;
 
-CREATE TABLE "Instructor" (
+CREATE TABLE "PersonalInformation" (
   "id" serial,
   "personNumber" varchar(12) UNIQUE,
   "name" varchar(100),
   "address" varchar(200),
-  "email" varchar(200) UNIQUE,
+  "email" varchar(100) UNIQUE,
   PRIMARY KEY ("id")
+);
+
+CREATE TYPE student_level_enum AS ENUM ('beginner', 'intermediate', 'advanced');
+
+CREATE TABLE "StudentLevel" (
+  "id" serial,
+  "level" student_level_enum,
+  PRIMARY KEY ("id")
+);
+
+CREATE TABLE "Student" (
+  "id" serial,
+  "siblingId" integer,
+  "levelId" integer,
+  "personalInformationId" integer,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "FK_Student.levelId"
+    FOREIGN KEY ("levelId")
+      REFERENCES "StudentLevel"("id")
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_Student.personalInformationId"
+    FOREIGN KEY ("personalInformationId")
+      REFERENCES "PersonalInformation"("id")
+      ON DELETE CASCADE
+);
+
+CREATE TABLE "ContactPerson" (
+  "id" serial,
+  "studentId" integer,
+  "personalInformationId" integer,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "FK_ContactPerson.studentId"
+    FOREIGN KEY ("studentId")
+      REFERENCES "Student"("id")
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_ContactPerson.personalInformationId"
+    FOREIGN KEY ("personalInformationId")
+      REFERENCES "PersonalInformation"("id")
+      ON DELETE CASCADE
+);
+
+CREATE TABLE "Instructor" (
+  "id" serial,
+  "personalInformationId" integer,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "FK_Instructor.personalInformationId"
+    FOREIGN KEY ("personalInformationId")
+      REFERENCES "PersonalInformation"("id")
+      ON DELETE CASCADE
 );
 
 CREATE TABLE "AvailableTimeSlot" (
@@ -33,14 +81,6 @@ CREATE TABLE "InstructorPayment" (
       ON DELETE CASCADE
 );
 
-CREATE TYPE student_level_enum AS ENUM ('beginner', 'intermediate', 'advanced');
-
-CREATE TABLE "StudentLevel" (
-  "id" serial,
-  "level" student_level_enum,
-  PRIMARY KEY ("id")
-);
-
 CREATE TABLE "Room" (
   "id" serial,
   "name" text,
@@ -49,30 +89,16 @@ CREATE TABLE "Room" (
   PRIMARY KEY ("id")
 );
 
-CREATE TABLE "Student" (
-  "id" serial,
-  "personNumber" varchar(12) UNIQUE,
-  "name" varchar(100),
-  "address" varchar(200),
-  "email" varchar(100) UNIQUE,
-  "siblingId" integer,
-  "levelId" integer,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_Student.levelId"
-    FOREIGN KEY ("levelId")
-      REFERENCES "StudentLevel"("id")
-      ON DELETE CASCADE
-);
-
 CREATE TABLE "Lesson" (
   "id" serial,
   "minimumRequiredStudentCount" integer,
   "instructorId" integer,
-  "groupSize" integer,
+  "groupSize" integer DEFAULT 0,
   "roomId" integer,
   "startTime" timestamp,
   "endTime" timestamp,
   "studentId" integer,
+  "levelId" integer,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_Lesson.instructorId"
     FOREIGN KEY ("instructorId")
@@ -85,6 +111,10 @@ CREATE TABLE "Lesson" (
   CONSTRAINT "FK_Lesson.studentId"
     FOREIGN KEY ("studentId")
       REFERENCES "Student"("id")
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_Lesson.levelId"
+    FOREIGN KEY ("levelId")
+      REFERENCES "StudentLevel"("id")
       ON DELETE CASCADE
 );
 
@@ -123,4 +153,3 @@ CREATE TABLE "AvailableInstrument" (
       REFERENCES "RentingInstrument"("id")
       ON DELETE CASCADE
 );
-

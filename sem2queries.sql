@@ -1,38 +1,39 @@
--- Example Queries
+-- Count number of students per skill level
+SELECT sl.level, COUNT(s.id) as student_count
+FROM "StudentLevel" sl
+LEFT JOIN "Student" s ON sl.id = s."levelId"
+GROUP BY sl.level;
 
--- 1. Get all instructors
-SELECT * FROM "Instructor";
+-- Find lessons with more than 5 students in the group
+SELECT l.id, l."startTime", pi.name as instructor_name, l."groupSize"
+FROM "Lesson" l
+JOIN "Instructor" i ON l."instructorId" = i.id
+JOIN "PersonalInformation" pi ON i."personalInformationId" = pi.id
+WHERE l."groupSize" > 5
+ORDER BY l."startTime";
 
--- 2. Get all available time slots for a specific instructor
-SELECT * FROM "AvailableTimeSlot" WHERE "instructorId" = 1;
+-- Calculate total payments received from each student in 2023
+SELECT pi.name, SUM(sp.amount) as total_paid, 
+       COUNT(sp.id) as number_of_payments
+FROM "StudentPayment" sp
+JOIN "Student" s ON sp."studentId" = s.id
+JOIN "PersonalInformation" pi ON s."personalInformationId" = pi.id
+WHERE EXTRACT(YEAR FROM sp."paymentDate") = 2023
+GROUP BY pi.name
+ORDER BY total_paid DESC;
 
--- 3. Get all payments made to instructors
-SELECT * FROM "InstructorPayment";
-
--- 4. Get all students and their levels
-SELECT s."name" AS student_name, sl."level" AS student_level
-FROM "Student" s
-JOIN "StudentLevel" sl ON s."levelId" = sl."id";
-
--- 5. Get all lessons scheduled in a specific room
-SELECT * FROM "Lesson" WHERE "roomId" = 1;
-
--- 6. Get all payments made by students
-SELECT * FROM "StudentPayment";
-
--- 7. Get all instruments rented by students
-SELECT ai."instrumentType", ri."studentId", ri."rentTime"
+-- Find instruments currently being rented and by whom
+SELECT pi.name as student_name, ai."instrumentType", 
+       ri."rentTime" as rental_start_date
 FROM "AvailableInstrument" ai
-JOIN "RentingInstrument" ri ON ai."rentingInstrumentId" = ri."id";
+JOIN "RentingInstrument" ri ON ai."rentingInstrumentId" = ri.id
+JOIN "Student" s ON ri."studentId" = s.id
+JOIN "PersonalInformation" pi ON s."personalInformationId" = pi.id
+ORDER BY ri."rentTime" DESC;
 
--- 8. Get all lessons for a specific student
-SELECT * FROM "Lesson" WHERE "studentId" = 1;
-
--- 9. Get all rooms and their capacities
-SELECT * FROM "Room";
-
--- 10. Get all students who have siblings
-SELECT * FROM "Student" WHERE "siblingId" IS NOT NULL;
-
--- 11. Get all lessons scheduled by a specific instructor
-SELECT * FROM "Lesson" WHERE "instructorId" = 1;
+-- Find the most popular lesson times
+SELECT EXTRACT(HOUR FROM l."startTime") as hour_of_day, 
+       COUNT(*) as lesson_count
+FROM "Lesson" l
+GROUP BY EXTRACT(HOUR FROM l."startTime")
+ORDER BY lesson_count DESC;
