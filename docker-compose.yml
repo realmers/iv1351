@@ -9,8 +9,14 @@ services:
       - postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_PASSWORD=kYgLpoyUEUGlTTYdPBseuDPQz8d2BcBidZzCvTaUCm4V4VxMi842DJXSkwtzkfU
-      - POSTGRES_USER=iv1351
-      - POSTGRES_DB=iv1351
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
 
 volumes:
   postgres_data:
+
+  # instructions
+  # docker compose up -d
+  # docker ps for container id
+  # docker cp ./imdb_dump.sql <container_id>:/tmp/imdb_dump.sql
+  # docker exec -i <container_id> psql -U postgres -d postgres -f /tmp/imdb_dump.sql
