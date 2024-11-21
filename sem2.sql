@@ -105,6 +105,7 @@ CREATE TABLE "RentingInstrument" (
   "id" serial,
   "studentId" integer,
   "rentTime" date,
+  "maxRentableInstrumentCount" integer DEFAULT 2 CHECK ("maxRentableInstrumentCount" = 2),
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_RentingInstrument.studentId"
     FOREIGN KEY ("studentId")
