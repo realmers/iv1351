@@ -1,3 +1,5 @@
+-- To be used in PostgreSQL
+
 SET search_path TO public;
 
 CREATE TABLE "PersonalInformation" (
@@ -89,16 +91,25 @@ CREATE TABLE "Room" (
   PRIMARY KEY ("id")
 );
 
+CREATE TYPE lesson_type_enum AS ENUM ('individual', 'group', 'ensemble');
+
+CREATE TABLE "Ensemble" (
+  "id" serial,
+  "genre" varchar(32),
+  PRIMARY KEY ("id")
+);
+-- Only creates the ensemble table if lesson type = ensemble
 CREATE TABLE "Lesson" (
   "id" serial,
   "minimumRequiredStudentCount" integer,
   "instructorId" integer,
-  "groupSize" integer DEFAULT 0,
   "roomId" integer,
   "startTime" timestamp,
   "endTime" timestamp,
   "studentId" integer,
   "levelId" integer,
+  "lessonType" lesson_type_enum,
+  "ensembleId" integer,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_Lesson.instructorId"
     FOREIGN KEY ("instructorId")
@@ -115,7 +126,15 @@ CREATE TABLE "Lesson" (
   CONSTRAINT "FK_Lesson.levelId"
     FOREIGN KEY ("levelId")
       REFERENCES "StudentLevel"("id")
-      ON DELETE CASCADE
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_Lesson.ensembleId"
+    FOREIGN KEY ("ensembleId")
+      REFERENCES "Ensemble"("id")
+      ON DELETE CASCADE,
+  CHECK (
+    ("lessonType" = 'ensemble' AND "ensembleId" IS NOT NULL) OR
+    ("lessonType" IN ('individual', 'group') AND "ensembleId" IS NULL)
+  )
 );
 
 CREATE TABLE "StudentPayment" (

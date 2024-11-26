@@ -1,39 +1,28 @@
--- Count number of students per skill level
-SELECT sl.level, COUNT(s.id) as student_count
-FROM "StudentLevel" sl
-LEFT JOIN "Student" s ON sl.id = s."levelId"
-GROUP BY sl.level;
+-- Drop the existing view if it exists
+DROP VIEW IF EXISTS monthly_lesson_counts;
 
--- Find lessons with more than 5 students in the group
-SELECT l.id, l."startTime", pi.name as instructor_name, l."groupSize"
-FROM "Lesson" l
-JOIN "Instructor" i ON l."instructorId" = i.id
-JOIN "PersonalInformation" pi ON i."personalInformationId" = pi.id
-WHERE l."groupSize" > 5
-ORDER BY l."startTime";
+-- Create a view for lesson counts per month
+CREATE VIEW monthly_lesson_counts AS
+WITH lesson_counts AS (
+  SELECT 
+    EXTRACT(MONTH FROM "startTime") as month,
+    COUNT(*) as total,
+    COUNT(CASE WHEN "lessonType" = 'individual' THEN 1 END) as individual,
+    COUNT(CASE WHEN "lessonType" = 'group' THEN 1 END) as group_lessons,
+    COUNT(CASE WHEN "lessonType" = 'ensemble' THEN 1 END) as ensemble
+  FROM "Lesson"
+  WHERE EXTRACT(YEAR FROM "startTime") = 2023
+  GROUP BY EXTRACT(MONTH FROM "startTime")
+)
+SELECT 
+  TO_CHAR(TO_DATE(month::text, 'MM'), 'Month') as month,
+  total,
+  individual,
+  group_lessons as "group",
+  ensemble
+FROM lesson_counts
+ORDER BY month DESC;
 
--- Calculate total payments received from each student in 2023
-SELECT pi.name, SUM(sp.amount) as total_paid, 
-       COUNT(sp.id) as number_of_payments
-FROM "StudentPayment" sp
-JOIN "Student" s ON sp."studentId" = s.id
-JOIN "PersonalInformation" pi ON s."personalInformationId" = pi.id
-WHERE EXTRACT(YEAR FROM sp."paymentDate") = 2023
-GROUP BY pi.name
-ORDER BY total_paid DESC;
-
--- Find instruments currently being rented and by whom
-SELECT pi.name as student_name, ai."instrumentType", 
-       ri."rentTime" as rental_start_date
-FROM "AvailableInstrument" ai
-JOIN "RentingInstrument" ri ON ai."rentingInstrumentId" = ri.id
-JOIN "Student" s ON ri."studentId" = s.id
-JOIN "PersonalInformation" pi ON s."personalInformationId" = pi.id
-ORDER BY ri."rentTime" DESC;
-
--- Find the most popular lesson times
-SELECT EXTRACT(HOUR FROM l."startTime") as hour_of_day, 
-       COUNT(*) as lesson_count
-FROM "Lesson" l
-GROUP BY EXTRACT(HOUR FROM l."startTime")
-ORDER BY lesson_count DESC;
+-- Analyze query performance
+EXPLAIN ANALYZE 
+SELECT * FROM monthly_lesson_counts;
