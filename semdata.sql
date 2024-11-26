@@ -1,11 +1,13 @@
+--- PostgresSQL
+
 -- Insert dummy data into PersonalInformation
-INSERT INTO "PersonalInformation" ("personNumber", "name", "address", "email") VALUES
-('123456789012', 'John Doe', '123 Main St', 'john.doe@example.com'),
-('234567890123', 'Jane Smith', '456 Elm St', 'jane.smith@example.com'),
-('345678901234', 'Alice Johnson', '789 Pine St', 'alice.johnson@example.com'),
-('456789012345', 'Bob Brown', '101 Maple St', 'bob.brown@example.com'),
-('567890123456', 'Charlie Davis', '202 Birch St', 'charlie.davis@example.com'),
-('678901234567', 'Diana Evans', '303 Cedar St', 'diana.evans@example.com');
+INSERT INTO "PersonalInformation" ("personNumber", "firstName", "lastName", "address", "email") VALUES
+('123456789012', 'John', 'Doe', '123 Main St', 'john.doe@example.com'),
+('234567890123', 'Jane', 'Smith'  '456 Elm St', 'jane.smith@example.com'),
+('345678901234', 'Alice', 'Johnson', '789 Pine St', 'alice.johnson@example.com'),
+('456789012345', 'Bob', 'Brown', '101 Maple St', 'bob.brown@example.com'),
+('567890123456', 'Charlie', 'Davis', '202 Birch St', 'charlie.davis@example.com'),
+('678901234567', 'Diana', 'Evans', '303 Cedar St', 'diana.evans@example.com');
 
 -- Insert dummy data into StudentLevel
 INSERT INTO "StudentLevel" ("level") VALUES
@@ -41,28 +43,26 @@ INSERT INTO "Room" ("name", "capacity", "location") VALUES
 ('Room F', 10, 'Building 6');
 
 -- Insert ensemble data first
-INSERT INTO "Ensemble" ("genre") VALUES
-('Classical'),
-('Jazz'),
-('Rock'),
-('Pop');
-
-
+INSERT INTO "Ensemble" ("genre", "minimumAmountOfStudents", "maximumAmountOfStudents") VALUES
+('Classical', 1, 3),
+('Jazz', 3, 10),
+('Rock', 4, 7),
+('Pop', 2, 6);
 
 -- Insert dummy data into Lesson with various dates and types
-INSERT INTO "Lesson" ("minimumRequiredStudentCount", "instructorId", "roomId", "startTime", "endTime", "studentId", "levelId", "lessonType", "ensembleId") VALUES
+INSERT INTO "Lesson" ("currentAmountOfStudents", "instructorId", "roomId", "startTime", "endTime", "studentId", "levelId", "lessonType", "ensembleId") VALUES
 -- October lessons
 (1, 1, 1, '2023-10-01 09:00:00', '2023-10-01 10:00:00', 1, 1, 'individual', NULL),
-(5, 2, 2, '2023-10-15 11:00:00', '2023-10-15 12:00:00', 2, 2, 'ensemble', 1),
+(3, 2, 2, '2023-10-15 11:00:00', '2023-10-15 12:00:00', 2, 2, 'ensemble', 1),
 -- November lessons
-(3, 3, 3, '2023-11-03 09:00:00', '2023-11-03 10:00:00', 3, 3, 'group', NULL),
-(3, 4, 4, '2023-11-14 11:00:00', '2023-11-14 12:00:00', 4, 1, 'group', NULL),
-(8, 5, 5, '2023-11-25 09:00:00', '2023-11-25 10:00:00', 5, 2, 'ensemble', 2),
+(4, 3, 3, '2023-11-03 09:00:00', '2023-11-03 10:00:00', 3, 3, 'group', NULL),
+(5, 4, 4, '2023-11-14 11:00:00', '2023-11-14 12:00:00', 4, 1, 'group', NULL),
+(6, 5, 5, '2023-11-25 09:00:00', '2023-11-25 10:00:00', 5, 2, 'ensemble', 2),
 -- December lessons
 (1, 6, 6, '2023-12-01 11:00:00', '2023-12-01 12:00:00', 6, 3, 'individual', NULL),
 (1, 1, 1, '2023-12-05 09:00:00', '2023-12-05 10:00:00', 1, 1, 'individual', NULL),
-(3, 2, 2, '2023-12-10 11:00:00', '2023-12-10 12:00:00', 2, 2, 'group', NULL),
-(8, 3, 3, '2023-12-15 09:00:00', '2023-12-15 10:00:00', 3, 3, 'ensemble', 3),
+(4, 2, 2, '2023-12-10 11:00:00', '2023-12-10 12:00:00', 2, 2, 'group', NULL),
+(5, 3, 3, '2023-12-15 09:00:00', '2023-12-15 10:00:00', 3, 3, 'ensemble', 3),
 (1, 4, 4, '2023-12-20 11:00:00', '2023-12-20 12:00:00', 4, 1, 'individual', NULL);
 
 -- Insert dummy data into InstructorPayment

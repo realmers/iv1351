@@ -5,7 +5,8 @@ SET search_path TO public;
 CREATE TABLE "PersonalInformation" (
   "id" serial,
   "personNumber" varchar(12) UNIQUE,
-  "name" varchar(100),
+  "firstName" varchar(100),
+  "lastName" varchar(100),
   "address" varchar(200),
   "email" varchar(100) UNIQUE,
   PRIMARY KEY ("id")
@@ -96,12 +97,14 @@ CREATE TYPE lesson_type_enum AS ENUM ('individual', 'group', 'ensemble');
 CREATE TABLE "Ensemble" (
   "id" serial,
   "genre" varchar(32),
+  "minimumAmountOfStudents" integer,
+  "maximumAmountOfStudents" integer,
   PRIMARY KEY ("id")
 );
 -- Only creates the ensemble table if lesson type = ensemble
 CREATE TABLE "Lesson" (
   "id" serial,
-  "minimumRequiredStudentCount" integer,
+  "currentAmountOfStudents" integer,
   "instructorId" integer,
   "roomId" integer,
   "startTime" timestamp,
@@ -134,6 +137,14 @@ CREATE TABLE "Lesson" (
   CHECK (
     ("lessonType" = 'ensemble' AND "ensembleId" IS NOT NULL) OR
     ("lessonType" IN ('individual', 'group') AND "ensembleId" IS NULL)
+  ),
+  CHECK (
+    "lessonType" != 'ensemble' OR 
+    "currentAmountOfStudents" <= (
+      SELECT "maximumAmountOfStudents" 
+      FROM "Ensemble" 
+      WHERE "id" = "ensembleId"
+    )
   )
 );
 
