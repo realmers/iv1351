@@ -1,43 +1,59 @@
+-- 1. Project Description, the Soundgood Music School
+-- The purpose is to facilitate information handling and business transactions for the Soundgood music school company, by developing a database which handles all the school's data and also an application that handles the operations specified in sections 1.1-1.3.
+-- 1.1 Business Overview
+-- Soundgood sells music lessons to students who want to learn to play an instrument. When someone wants to attend the school, they submit contact details, which instrument they want to learn, and their present skill. If there is room, the student is offered a place. There is no concept like 'course' or sets of lessons. Instead, students continue to take lessons as long as they wish. Students pay per lesson and instructors are payed per given lesson.
+-- 1.2 Detailed Descriptions
+-- Lesson
+-- There are individual lessons and group lessons. A group lesson has a specified number of places (which may vary), and is not given unless a minimum number of students enroll. A lesson is given for a particular instrument and a particular level. There are three levels, beginner, intermediate and advanced. Besides lessons for a particular instrument, there are also ensembles, where students playing different instruments participate at the same lesson. Ensembles have a specific target genre (e.g., punk rock, gospel band), and there is a maximum and minimum number of students also for ensembles.
+-- Group lessons and ensembles are given at scheduled time slots. Individual lessons do not have a fixed schedule, but are rather to be seen as appointments, like for example an appointment with a dentist. Administrative staff must be able to make bookings, it must therefore be possible to understand which instructor is available when, and for which instruments.
+-- There is no concept like 'course' or sets of lessons, a student who has been offered a place, and accepted, continue to take lessons as long as desired, and can either book one lesson at the time or book many lessons during a longer time period.
+-- Student
+-- A student can take any number of lessons, for any number of instruments. Person number, name, address and contact details must be stored for each student. It must also be possible to store contact details for a contact person (e.g., parent) for each student. Furthermore, it must be possible to see which students are siblings, since there is a discount for siblings. It's not sufficient to show just whether a student has siblings, it must be possible to see who's a sibling of who.
+-- Instructor
+-- An instructor can be assigned to group lessons and ensembles, and can also be available to give individual lessons during specified time periods. An instructor can teach a specified set of instruments, and may also be able to teach ensembles. Person number, name, address and contact details must be stored for each instructor. 
+-- Student Payment
+-- Students are charged monthly for all lessons taken during the previous month. Currently, there is one price for beginner and intermediate levels, and another price for the advanced level. Also, there are different prices for individual lessons, group lessons and ensembles. There is also a discount for siblings, if two or more siblings have taken lessons during the same month, they all get a certain percentage discount. Soundgood wants to have a high level of flexibility to change not just prices, but also pricing scheme. They might, for example, not always have the same price for beginner and intermediate lessons.
+-- Instructor Payment
+-- There are no instructors with fixed monthly salaries, instead they are payed monthly for all lessons given during the previous month. Instructor payments depend on the same things as student fees (see above), namely level of lesson and whether a given lesson was a group or individual lesson. Instructor payments are not affected by sibling discounts.
+-- Renting Instruments
+-- Soundgood offers students the ability to rent instruments to be delivered at their home. There is a wide selection of instruments, wind, string etc., supporting different brands and in different quantities in stock at the soundgood music school. Each student can rent up to two specific instruments at any given period, the renting happens with a lease up to 12 month period. Students can list and search current instruments and rent them if they don't exceed their two-instrument quota. Instruments are rented per month. The fee is payed the same way lessons are payed, each month students are charged for the instruments that where rented the previous month.
+-- 1.3 Requirements on the Soundgood Music School Application
+-- The database must store all data described above, in sections 1.1 and 1.2, but no other data. There will also be an application providing a user interface which can be used by administrative staff to manage student enrollments, instrument rentals, bookings and payments. In addition, the database will also be used to retrieve reports and statistics of all possible kinds, but a user interface is not required for that purpose. It will instead be done by manually querying the database.
+-- The database will not be used for any financial purpose like bookkeeping, taxes or bank contacts. What is written above regarding student fees and instructor payments is only about calculating what sum shall be payed to or by who, and sending that information to Soundgood's financial system.
+
 SET search_path TO public;
 
 CREATE TABLE "PersonalInformation" (
   "id" serial,
-  "personNumber" varchar(12) UNIQUE,
-  "firstName" varchar(100),
-  "lastName" varchar(100),
-  "address" varchar(200),
-  "email" varchar(100) UNIQUE,
-  PRIMARY KEY ("id")
-);
-
-CREATE TYPE student_level_enum AS ENUM ('beginner', 'intermediate', 'advanced');
-
-CREATE TABLE "StudentLevel" (
-  "id" serial,
-  "level" student_level_enum,
+  "personNumber" varchar(12) UNIQUE NOT NULL,
+  "firstName" varchar(100) NOT NULL,
+  "lastName" varchar(100) NOT NULL,
+  "address" varchar(200) NOT NULL,
+  "email" varchar(100) UNIQUE NOT NULL,
   PRIMARY KEY ("id")
 );
 
 CREATE TABLE "Student" (
   "id" serial,
   "siblingId" integer,
-  "levelId" integer,
-  "personalInformationId" integer,
+  "personalInformationId" integer NOT NULL,
   PRIMARY KEY ("id"),
-  CONSTRAINT "FK_Student.levelId"
-    FOREIGN KEY ("levelId")
-      REFERENCES "StudentLevel"("id")
-      ON DELETE CASCADE,
   CONSTRAINT "FK_Student.personalInformationId"
     FOREIGN KEY ("personalInformationId")
       REFERENCES "PersonalInformation"("id")
-      ON DELETE CASCADE
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_Student.siblingId"
+    FOREIGN KEY ("siblingId")
+      REFERENCES "Student"("id")
+      ON DELETE SET NULL
 );
+
+DROP TABLE IF EXISTS "StudentSiblings" CASCADE;
 
 CREATE TABLE "ContactPerson" (
   "id" serial,
-  "studentId" integer,
-  "personalInformationId" integer,
+  "studentId" integer NOT NULL,
+  "personalInformationId" integer NOT NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_ContactPerson.studentId"
     FOREIGN KEY ("studentId")
@@ -51,7 +67,8 @@ CREATE TABLE "ContactPerson" (
 
 CREATE TABLE "Instructor" (
   "id" serial,
-  "personalInformationId" integer,
+  "personalInformationId" integer NOT NULL,
+  "canTeachEnsemble" boolean NOT NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_Instructor.personalInformationId"
     FOREIGN KEY ("personalInformationId")
@@ -61,8 +78,8 @@ CREATE TABLE "Instructor" (
 
 CREATE TABLE "AvailableTimeSlot" (
   "id" serial,
-  "timeslot" timestamp,
-  "instructorId" integer,
+  "timeslot" timestamp NOT NULL,
+  "instructorId" integer NOT NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_AvailableTimeSlot.instructorId"
     FOREIGN KEY ("instructorId")
@@ -70,53 +87,46 @@ CREATE TABLE "AvailableTimeSlot" (
       ON DELETE CASCADE
 );
 
-CREATE TABLE "InstructorPayment" (
-  "id" serial,
-  "paymentDate" date,
-  "amount" real,
-  "instructorId" integer,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_InstructorPayment.instructorId"
-    FOREIGN KEY ("instructorId")
-      REFERENCES "Instructor"("id")
-      ON DELETE CASCADE
-);
-
 CREATE TABLE "Room" (
   "id" serial,
-  "name" text,
-  "capacity" integer,
-  "location" text,
+  "name" text NOT NULL,
+  "capacity" integer NOT NULL,
+  "location" text NOT NULL,
   PRIMARY KEY ("id")
 );
 
 
 CREATE TABLE "LessonCapacity" (
   "id" serial,
-  "minimumAmountOfStudents" integer,
-  "maximumAmountOfStudents" integer,
+  "minimumAmountOfStudents" integer NOT NULL,
+  "maximumAmountOfStudents" integer NOT NULL,
   PRIMARY KEY ("id")
 );
+CREATE TYPE "lessonType" AS ENUM ('individual', 'group', 'ensemble');
+CREATE TYPE "lessonLevel" AS ENUM ('beginner', 'intermediate', 'advanced');
 
 CREATE TABLE "PricingScheme" (
   "id" serial,
-  "price" decimal(10,2),
+  "amount" decimal(10,2) NOT NULL,
   "validFrom" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "validTo" timestamp,
+  "lessonType" "lessonType" NOT NULL,
+  "discountPercentage" decimal(2,2),
+  "paymentDate" timestamp,
+  "lessonLevel" "lessonLevel" NOT NULL,
   PRIMARY KEY ("id"),
   CHECK ("validTo" IS NULL OR "validTo" > "validFrom")
 );
 
 CREATE TABLE "Lesson" (
   "id" serial,
-  "currentAmountOfStudents" integer,
-  "instructorId" integer,
-  "roomId" integer,
-  "startTime" timestamp,
-  "endTime" timestamp,
+  "currentAmountOfStudents" integer NOT NULL,
+  "instructorId" integer NOT NULL,
+  "roomId" integer NOT NULL,
+  "startTime" timestamp NOT NULL,
+  "endTime" timestamp NOT NULL,
   "studentId" integer,
-  "levelId" integer,
-  "pricingSchemeId" integer UNIQUE NOT NULL,
+  "pricingSchemeId" integer NOT NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_Lesson.instructorId"
     FOREIGN KEY ("instructorId")
@@ -129,10 +139,6 @@ CREATE TABLE "Lesson" (
   CONSTRAINT "FK_Lesson.studentId"
     FOREIGN KEY ("studentId")
       REFERENCES "Student"("id")
-      ON DELETE CASCADE,
-  CONSTRAINT "FK_Lesson.levelId"
-    FOREIGN KEY ("levelId")
-      REFERENCES "StudentLevel"("id")
       ON DELETE CASCADE,
   CONSTRAINT "FK_Lesson.pricingSchemeId"
     FOREIGN KEY ("pricingSchemeId")
@@ -152,7 +158,7 @@ CREATE TABLE "Individual"(
 
 CREATE TABLE "Ensemble" (
   "id" serial,
-  "genre" varchar(32),
+  "genre" varchar(32) NOT NULL,
   "lessonCapacityId" integer,
   "lessonId" integer,
   PRIMARY KEY ("id"),
@@ -180,88 +186,18 @@ CREATE TABLE "Group" (
       REFERENCES "Lesson"("id")
       ON DELETE CASCADE
 );
-
--- Trigger function: check_lesson_type
--- Purpose: Ensures correct lesson type and reference combinations
--- When: Runs before INSERT or UPDATE on Lesson table
--- What it does: Raises an exception if the lesson type and references are not consistent
-CREATE OR REPLACE FUNCTION check_lesson_type()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW."lessonType" = 'individual' AND EXISTS (SELECT 1 FROM "GroupLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Individual lesson cannot have a group lesson reference';
-    ELSIF NEW."lessonType" = 'individual' AND EXISTS (SELECT 1 FROM "EnsembleLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Individual lesson cannot have an ensemble lesson reference';
-    ELSIF NEW."lessonType" = 'group' AND NOT EXISTS (SELECT 1 FROM "GroupLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Group lesson must have a group lesson reference';
-    ELSIF NEW."lessonType" = 'group' AND EXISTS (SELECT 1 FROM "EnsembleLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Group lesson cannot have an ensemble lesson reference';
-    ELSIF NEW."lessonType" = 'ensemble' AND NOT EXISTS (SELECT 1 FROM "EnsembleLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Ensemble lesson must have an ensemble lesson reference';
-    ELSIF NEW."lessonType" = 'ensemble' AND EXISTS (SELECT 1 FROM "GroupLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Ensemble lesson cannot have a group lesson reference';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER enforce_lesson_type
-BEFORE INSERT OR UPDATE ON "Lesson"
-FOR EACH ROW
-EXECUTE FUNCTION check_lesson_type();
-
--- Trigger function: check_group_lesson_enrollment
--- Purpose: Prevents scheduling group lessons that don't meet minimum student requirements
--- When: Runs before INSERT or UPDATE on Lesson table
--- What it does: Raises an exception if trying to create/modify a group lesson
---              with fewer students than the minimum required for that group
-CREATE OR REPLACE FUNCTION check_group_lesson_enrollment()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW."lessonType" = 'group' AND NEW."currentAmountOfStudents" < (
-        SELECT "minimumAmountOfStudents"
-        FROM "LessonCapacity"
-        WHERE "id" = (
-          SELECT "lessonCapacityId"
-          FROM "Group"
-          WHERE "id" = NEW."GroupId"
-        )
-    ) THEN
-        RAISE EXCEPTION 'Group lesson cannot be scheduled with fewer students than the minimum requirement';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER enforce_group_lesson_minimum
-BEFORE INSERT OR UPDATE ON "Lesson"
-FOR EACH ROW
-EXECUTE FUNCTION check_group_lesson_enrollment();
-
 -- Pricing constraints:
 -- Ensures end date is always after start date for pricing periods
-CREATE TABLE "StudentPayment" (
-  "id" serial,
-  "studentId" integer,
-  "discountPercentage" real,
-  "paymentDate" date,
-  "amount" real,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_StudentPayment.studentId"
-    FOREIGN KEY ("studentId")
-      REFERENCES "Student"("id")
-      ON DELETE CASCADE
-);
 
 -- Renting constraints:
 -- 1. Ensures rental end date is after start date
 -- 2. Limits rental duration to maximum of 12 months
 CREATE TABLE "RentingInstrument" (
   "id" serial,
-  "studentId" integer,
-  "startTime" timestamp,
-  "endTime" timestamp,
-  "monthlyFee" decimal(10,2),
+  "studentId" integer NOT NULL,
+  "startTime" timestamp NOT NULL,
+  "endTime" timestamp NOT NULL,
+  "monthlyFee" decimal(10,2) NOT NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_RentingInstrument.studentId"
     FOREIGN KEY ("studentId")
@@ -276,9 +212,9 @@ CREATE TABLE "RentingInstrument" (
 
 CREATE TABLE "AvailableInstrument" (
   "id" serial,
-  "instrumentType" varchar(50),
-  "instrumentBrand" varchar(50),
-  "instrumentQuantity" integer,
+  "instrumentType" varchar(50) NOT NULL,
+  "instrumentBrand" varchar(50) NOT NULL,
+  "instrumentQuantity" integer NOT NULL,
   "rentingInstrumentId" integer,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_AvailableInstrument.rentingInstrumentId"
