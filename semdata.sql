@@ -100,23 +100,23 @@ INSERT INTO "Group" ("id", "lessonCapacityId", "lessonId") VALUES
 (2, 6, 4),
 (3, 7, 8);
 
--- Insert dummy data into RentingInstrument with updated fields
-INSERT INTO "RentingInstrument" ("id", "studentId", "startTime", "endTime", "monthlyFee") VALUES
-(1, 1, '2023-10-01', '2024-04-01', 150.00),
-(2, 2, '2023-10-02', '2024-03-02', 200.00),
-(3, 3, '2023-10-03', '2024-02-03', 175.00),
-(4, 4, '2023-10-04', '2024-01-04', 225.00),
-(5, 5, '2023-10-05', '2024-05-05', 190.00),
-(6, 6, '2023-10-06', '2024-06-06', 160.00);
-
 -- First insert the available instruments without rental references
-INSERT INTO "AvailableInstrument" ("id", "instrumentType", "instrumentBrand", "instrumentQuantity", "rentingInstrumentId") VALUES
-(1, 'Guitar', 'Yamaha', 5, NULL),
-(2, 'Piano', 'Steinway', 2, NULL),
-(3, 'Violin', 'Stradivarius', 3, NULL),
-(4, 'Drum', 'Pearl', 4, NULL),
-(5, 'Flute', 'Armstrong', 6, NULL),
-(6, 'Saxophone', 'Selmer', 3, NULL);
+INSERT INTO "AvailableInstrument" ("id", "instrumentType", "instrumentBrand", "instrumentQuantity") VALUES
+(1, 'Guitar', 'Yamaha', 5),
+(2, 'Piano', 'Steinway', 2),
+(3, 'Violin', 'Stradivarius', 3),
+(4, 'Drum', 'Pearl', 4),
+(5, 'Flute', 'Armstrong', 6),
+(6, 'Saxophone', 'Selmer', 3);
+
+-- Insert dummy data into RentingInstrument with updated fields
+INSERT INTO "RentingInstrument" ("id", "studentId", "availableInstrumentId", "startTime", "endTime", "monthlyFee") VALUES
+(1, 1, 1, '2023-10-01', '2024-04-01', 150.00),
+(2, 2, 2, '2023-10-02', '2024-03-02', 200.00),
+(3, 3, 3, '2023-10-03', '2024-02-03', 175.00),
+(4, 4, 4, '2023-10-04', '2024-01-04', 225.00),
+(5, 5, 5, '2023-10-05', '2024-05-05', 190.00),
+(6, 6, 6, '2023-10-06', '2024-06-06', 160.00);
 
 -- Insert dummy data into AvailableTimeSlot
 INSERT INTO "AvailableTimeSlot" ("id", "timeslot", "instructorId") VALUES

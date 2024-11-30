@@ -271,9 +271,19 @@ EXECUTE FUNCTION validate_lesson_type();
 -- Renting constraints:
 -- 1. Ensures rental end date is after start date
 -- 2. Limits rental duration to maximum of 12 months
+CREATE TABLE "AvailableInstrument" (
+  "id" serial,
+  "instrumentType" varchar(50) NOT NULL,
+  "instrumentBrand" varchar(50) NOT NULL,
+  "instrumentQuantity" integer NOT NULL,
+  PRIMARY KEY ("id"),
+  CHECK ("instrumentQuantity" >= 0)
+);
+
 CREATE TABLE "RentingInstrument" (
   "id" serial,
   "studentId" integer NOT NULL,
+  "availableInstrumentId" integer NOT NULL,
   "startTime" timestamp NOT NULL,
   "endTime" timestamp NOT NULL,
   "monthlyFee" decimal(10,2) NOT NULL,
@@ -282,25 +292,15 @@ CREATE TABLE "RentingInstrument" (
     FOREIGN KEY ("studentId")
       REFERENCES "Student"("id")
       ON DELETE CASCADE,
+  CONSTRAINT "FK_RentingInstrument.availableInstrumentId"
+    FOREIGN KEY ("availableInstrumentId")
+      REFERENCES "AvailableInstrument"("id")
+      ON DELETE CASCADE,
   CHECK ("endTime" > "startTime"),
   CHECK (
     EXTRACT(YEAR FROM AGE("endTime", "startTime")) * 12 +
     EXTRACT(MONTH FROM AGE("endTime", "startTime")) <= 12
   )
-);
-
-CREATE TABLE "AvailableInstrument" (
-  "id" serial,
-  "instrumentType" varchar(50) NOT NULL,
-  "instrumentBrand" varchar(50) NOT NULL,
-  "instrumentQuantity" integer NOT NULL,
-  "rentingInstrumentId" integer,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_AvailableInstrument.rentingInstrumentId"
-    FOREIGN KEY ("rentingInstrumentId")
-      REFERENCES "RentingInstrument"("id")
-      ON DELETE CASCADE,
-  CHECK ("instrumentQuantity" >= 0)
 );
 
 -- Trigger function: check_instrument_limit
@@ -314,7 +314,7 @@ BEGIN
     IF (
         SELECT COUNT(*)
         FROM "RentingInstrument" ri
-        JOIN "AvailableInstrument" ai ON ri."id" = ai."rentingInstrumentId"
+        JOIN "AvailableInstrument" ai ON ri."availableInstrumentId" = ai."id"
         WHERE ri."studentId" = NEW."studentId"
         AND CURRENT_DATE BETWEEN ri."startTime" AND ri."endTime"
     ) >= 2 THEN
