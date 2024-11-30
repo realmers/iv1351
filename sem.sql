@@ -48,7 +48,7 @@ CREATE TABLE "Student" (
       ON DELETE SET NULL
 );
 
-DROP TABLE IF EXISTS "StudentSiblings" CASCADE;
+
 
 CREATE TABLE "ContactPerson" (
   "id" serial,
@@ -126,7 +126,8 @@ CREATE TABLE "Lesson" (
   "startTime" timestamp NOT NULL,
   "endTime" timestamp NOT NULL,
   "studentId" integer,
-  "pricingSchemeId" integer NOT NULL,
+  "pricingSchemeId" integer NOT NULL UNIQUE,  
+  "lessonType" "lessonType" NOT NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_Lesson.instructorId"
     FOREIGN KEY ("instructorId")
@@ -146,6 +147,46 @@ CREATE TABLE "Lesson" (
       ON DELETE CASCADE
 );
 
+-- Add check constraints after the Lesson table is created
+CREATE OR REPLACE FUNCTION check_lesson_type() 
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Get the lesson type from the inserted/updated record
+    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+        IF NEW."lessonType"::text = 'individual' AND EXISTS (
+            SELECT 1 FROM "Group" g WHERE g."lessonId" = NEW."id"
+            UNION
+            SELECT 1 FROM "Ensemble" e WHERE e."lessonId" = NEW."id"
+        ) THEN
+            RAISE EXCEPTION 'Individual lesson cannot be a group or ensemble lesson';
+        END IF;
+
+        IF NEW."lessonType"::text = 'group' AND EXISTS (
+            SELECT 1 FROM "Individual" i WHERE i."lessonId" = NEW."id"
+            UNION
+            SELECT 1 FROM "Ensemble" e WHERE e."lessonId" = NEW."id"
+        ) THEN
+            RAISE EXCEPTION 'Group lesson cannot be an individual or ensemble lesson';
+        END IF;
+
+        IF NEW."lessonType"::text = 'ensemble' AND EXISTS (
+            SELECT 1 FROM "Individual" i WHERE i."lessonId" = NEW."id"
+            UNION
+            SELECT 1 FROM "Group" g WHERE g."lessonId" = NEW."id"
+        ) THEN
+            RAISE EXCEPTION 'Ensemble lesson cannot be an individual or group lesson';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_lesson_type
+BEFORE INSERT OR UPDATE ON "Lesson"
+FOR EACH ROW
+EXECUTE FUNCTION check_lesson_type();
+
 CREATE TABLE "Individual"(
   "id" serial,
   "lessonId" integer UNIQUE,
@@ -160,13 +201,13 @@ CREATE TABLE "Ensemble" (
   "id" serial,
   "genre" varchar(32) NOT NULL,
   "lessonCapacityId" integer,
-  "lessonId" integer,
+  "lessonId" integer UNIQUE,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_Ensemble.lessonCapacityId"
     FOREIGN KEY ("lessonCapacityId")
       REFERENCES "LessonCapacity"("id")
       ON DELETE CASCADE,
-  CONSTRAINT "FK_Individual.lessonId"
+  CONSTRAINT "FK_Ensemble.lessonId"
     FOREIGN KEY ("lessonId")
       REFERENCES "Lesson"("id")
       ON DELETE CASCADE
@@ -175,17 +216,55 @@ CREATE TABLE "Ensemble" (
 CREATE TABLE "Group" (
   "id" serial,
   "lessonCapacityId" integer,
-  "lessonId" integer,
+  "lessonId" integer UNIQUE,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_Group.lessonCapacityId"
     FOREIGN KEY ("lessonCapacityId")
       REFERENCES "LessonCapacity"("id")
       ON DELETE CASCADE,
-  CONSTRAINT "FK_Individual.lessonId"
+  CONSTRAINT "FK_Group.lessonId"
     FOREIGN KEY ("lessonId")
       REFERENCES "Lesson"("id")
       ON DELETE CASCADE
 );
+
+-- Add trigger function to validate lesson types
+CREATE OR REPLACE FUNCTION validate_lesson_type()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_TABLE_NAME = 'Individual' THEN
+        IF NOT EXISTS (SELECT 1 FROM "Lesson" WHERE "id" = NEW."lessonId" AND "lessonType" = 'individual') THEN
+            RAISE EXCEPTION 'Lesson must be of type individual';
+        END IF;
+    ELSIF TG_TABLE_NAME = 'Group' THEN
+        IF NOT EXISTS (SELECT 1 FROM "Lesson" WHERE "id" = NEW."lessonId" AND "lessonType" = 'group') THEN
+            RAISE EXCEPTION 'Lesson must be of type group';
+        END IF;
+    ELSIF TG_TABLE_NAME = 'Ensemble' THEN
+        IF NOT EXISTS (SELECT 1 FROM "Lesson" WHERE "id" = NEW."lessonId" AND "lessonType" = 'ensemble') THEN
+            RAISE EXCEPTION 'Lesson must be of type ensemble';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create triggers for each table
+CREATE TRIGGER validate_individual_lesson
+BEFORE INSERT OR UPDATE ON "Individual"
+FOR EACH ROW
+EXECUTE FUNCTION validate_lesson_type();
+
+CREATE TRIGGER validate_group_lesson
+BEFORE INSERT OR UPDATE ON "Group"
+FOR EACH ROW
+EXECUTE FUNCTION validate_lesson_type();
+
+CREATE TRIGGER validate_ensemble_lesson
+BEFORE INSERT OR UPDATE ON "Ensemble"
+FOR EACH ROW
+EXECUTE FUNCTION validate_lesson_type();
+
 -- Pricing constraints:
 -- Ensures end date is always after start date for pricing periods
 
@@ -215,13 +294,22 @@ CREATE TABLE "AvailableInstrument" (
   "instrumentType" varchar(50) NOT NULL,
   "instrumentBrand" varchar(50) NOT NULL,
   "instrumentQuantity" integer NOT NULL,
-  "rentingInstrumentId" integer,
   PRIMARY KEY ("id"),
-  CONSTRAINT "FK_AvailableInstrument.rentingInstrumentId"
+  CHECK ("instrumentQuantity" >= 0)
+);
+
+CREATE TABLE "RentedInstrument" (
+  "rentingInstrumentId" integer NOT NULL,
+  "availableInstrumentId" integer NOT NULL,
+  PRIMARY KEY ("rentingInstrumentId", "availableInstrumentId"),
+  CONSTRAINT "FK_RentedInstrument.rentingInstrumentId"
     FOREIGN KEY ("rentingInstrumentId")
       REFERENCES "RentingInstrument"("id")
       ON DELETE CASCADE,
-  CHECK ("instrumentQuantity" >= 0)
+  CONSTRAINT "FK_RentedInstrument.availableInstrumentId"
+    FOREIGN KEY ("availableInstrumentId")
+      REFERENCES "AvailableInstrument"("id")
+      ON DELETE CASCADE
 );
 
 -- Trigger function: check_instrument_limit
@@ -235,7 +323,7 @@ BEGIN
     IF (
         SELECT COUNT(*)
         FROM "RentingInstrument" ri
-        JOIN "AvailableInstrument" ai ON ri."id" = ai."rentingInstrumentId"
+        JOIN "RentedInstrument" rni ON ri."id" = rni."rentingInstrumentId"
         WHERE ri."studentId" = NEW."studentId"
         AND CURRENT_DATE BETWEEN ri."startTime" AND ri."endTime"
     ) >= 2 THEN
