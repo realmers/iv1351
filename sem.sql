@@ -294,22 +294,13 @@ CREATE TABLE "AvailableInstrument" (
   "instrumentType" varchar(50) NOT NULL,
   "instrumentBrand" varchar(50) NOT NULL,
   "instrumentQuantity" integer NOT NULL,
+  "rentingInstrumentId" integer,
   PRIMARY KEY ("id"),
-  CHECK ("instrumentQuantity" >= 0)
-);
-
-CREATE TABLE "RentedInstrument" (
-  "rentingInstrumentId" integer NOT NULL,
-  "availableInstrumentId" integer NOT NULL,
-  PRIMARY KEY ("rentingInstrumentId", "availableInstrumentId"),
-  CONSTRAINT "FK_RentedInstrument.rentingInstrumentId"
+  CONSTRAINT "FK_AvailableInstrument.rentingInstrumentId"
     FOREIGN KEY ("rentingInstrumentId")
       REFERENCES "RentingInstrument"("id")
       ON DELETE CASCADE,
-  CONSTRAINT "FK_RentedInstrument.availableInstrumentId"
-    FOREIGN KEY ("availableInstrumentId")
-      REFERENCES "AvailableInstrument"("id")
-      ON DELETE CASCADE
+  CHECK ("instrumentQuantity" >= 0)
 );
 
 -- Trigger function: check_instrument_limit
@@ -323,7 +314,7 @@ BEGIN
     IF (
         SELECT COUNT(*)
         FROM "RentingInstrument" ri
-        JOIN "RentedInstrument" rni ON ri."id" = rni."rentingInstrumentId"
+        JOIN "AvailableInstrument" ai ON ri."id" = ai."rentingInstrumentId"
         WHERE ri."studentId" = NEW."studentId"
         AND CURRENT_DATE BETWEEN ri."startTime" AND ri."endTime"
     ) >= 2 THEN
