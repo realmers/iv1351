@@ -60,3 +60,39 @@ SELECT * FROM instructor_lesson_count;
 
 -- Performance analysis
 EXPLAIN ANALYZE SELECT * FROM instructor_lesson_count;
+
+-- Create view for ensemble schedule and availability
+CREATE OR REPLACE VIEW ensemble_schedule AS
+WITH ensemble_details AS (
+    SELECT 
+        l.id,
+        l."startTime",
+        e.genre,
+        l."currentAmountOfStudents",
+        lc."maximumAmountOfStudents",
+        (lc."maximumAmountOfStudents" - l."currentAmountOfStudents") as free_seats
+    FROM "Lesson" l
+    JOIN "Ensemble" e ON e."lessonId" = l.id
+    JOIN "LessonCapacity" lc ON e."lessonCapacityId" = lc.id
+    WHERE 
+        l."startTime" >= CURRENT_DATE 
+        AND l."startTime" < CURRENT_DATE + INTERVAL '7 days'
+)
+SELECT 
+    TO_CHAR("startTime", 'Day') as "Day",
+    genre as "Genre",
+    CASE 
+        WHEN free_seats = 0 THEN 'No Seats'
+        WHEN free_seats BETWEEN 1 AND 2 THEN '1 or 2 Seats'
+        ELSE 'Many Seats'
+    END as "No of Free Seats"
+FROM ensemble_details
+ORDER BY 
+    EXTRACT(DOW FROM "startTime"),
+    genre;
+
+-- Query to show ensemble schedule
+SELECT * FROM ensemble_schedule;
+
+-- Performance analysis
+EXPLAIN ANALYZE SELECT * FROM ensemble_schedule;

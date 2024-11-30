@@ -23,6 +23,9 @@
 
 SET search_path TO public;
 
+CREATE TYPE "lessonType" AS ENUM ('individual', 'group', 'ensemble');
+CREATE TYPE "lessonLevel" AS ENUM ('beginner', 'intermediate', 'advanced');
+
 CREATE TABLE "PersonalInformation" (
   "id" serial,
   "personNumber" varchar(12) UNIQUE NOT NULL,
@@ -31,60 +34,6 @@ CREATE TABLE "PersonalInformation" (
   "address" varchar(200) NOT NULL,
   "email" varchar(100) UNIQUE NOT NULL,
   PRIMARY KEY ("id")
-);
-
-CREATE TABLE "Student" (
-  "id" serial,
-  "siblingId" integer,
-  "personalInformationId" integer NOT NULL,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_Student.personalInformationId"
-    FOREIGN KEY ("personalInformationId")
-      REFERENCES "PersonalInformation"("id")
-      ON DELETE CASCADE,
-  CONSTRAINT "FK_Student.siblingId"
-    FOREIGN KEY ("siblingId")
-      REFERENCES "Student"("id")
-      ON DELETE SET NULL
-);
-
-
-
-CREATE TABLE "ContactPerson" (
-  "id" serial,
-  "studentId" integer NOT NULL,
-  "personalInformationId" integer NOT NULL,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_ContactPerson.studentId"
-    FOREIGN KEY ("studentId")
-      REFERENCES "Student"("id")
-      ON DELETE CASCADE,
-  CONSTRAINT "FK_ContactPerson.personalInformationId"
-    FOREIGN KEY ("personalInformationId")
-      REFERENCES "PersonalInformation"("id")
-      ON DELETE CASCADE
-);
-
-CREATE TABLE "Instructor" (
-  "id" serial,
-  "personalInformationId" integer NOT NULL,
-  "canTeachEnsemble" boolean NOT NULL,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_Instructor.personalInformationId"
-    FOREIGN KEY ("personalInformationId")
-      REFERENCES "PersonalInformation"("id")
-      ON DELETE CASCADE
-);
-
-CREATE TABLE "AvailableTimeSlot" (
-  "id" serial,
-  "timeslot" timestamp NOT NULL,
-  "instructorId" integer NOT NULL,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_AvailableTimeSlot.instructorId"
-    FOREIGN KEY ("instructorId")
-      REFERENCES "Instructor"("id")
-      ON DELETE CASCADE
 );
 
 CREATE TABLE "Room" (
@@ -102,8 +51,80 @@ CREATE TABLE "LessonCapacity" (
   "maximumAmountOfStudents" integer NOT NULL,
   PRIMARY KEY ("id")
 );
-CREATE TYPE "lessonType" AS ENUM ('individual', 'group', 'ensemble');
-CREATE TYPE "lessonLevel" AS ENUM ('beginner', 'intermediate', 'advanced');
+CREATE TABLE "Instructor" (
+  "id" serial,
+  "personalInformationId" integer NOT NULL,
+  "canTeachEnsemble" boolean NOT NULL,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "FK_Instructor.personalInformationId"
+    FOREIGN KEY ("personalInformationId")
+      REFERENCES "PersonalInformation"("id")
+      ON DELETE CASCADE
+);
+CREATE TABLE "Lesson" (
+  "id" serial,
+  "currentAmountOfStudents" integer NOT NULL,
+  "instructorId" integer NOT NULL,
+  "roomId" integer NOT NULL,
+  "startTime" timestamp NOT NULL,
+  "endTime" timestamp NOT NULL,
+  "lessonType" "lessonType" NOT NULL,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "FK_Lesson.instructorId"
+    FOREIGN KEY ("instructorId")
+      REFERENCES "Instructor"("id")
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_Lesson.roomId"
+    FOREIGN KEY ("roomId")
+      REFERENCES "Room"("id")
+      ON DELETE CASCADE
+);
+
+CREATE TABLE "Student" (
+  "id" serial,
+  "siblingId" integer,
+  "personalInformationId" integer NOT NULL,
+  "lessonId" integer NOT NULL,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "FK_Student.personalInformationId"
+    FOREIGN KEY ("personalInformationId")
+      REFERENCES "PersonalInformation"("id")
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_Student.lessonId"
+    FOREIGN KEY ("lessonId")
+      REFERENCES "Lesson"("id")
+      ON DELETE CASCADE
+);
+
+CREATE TABLE "ContactPerson" (
+  "id" serial,
+  "studentId" integer NOT NULL,
+  "personalInformationId" integer NOT NULL,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "FK_ContactPerson.studentId"
+    FOREIGN KEY ("studentId")
+      REFERENCES "Student"("id")
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_ContactPerson.personalInformationId"
+    FOREIGN KEY ("personalInformationId")
+      REFERENCES "PersonalInformation"("id")
+      ON DELETE CASCADE
+);
+
+
+
+CREATE TABLE "AvailableTimeSlot" (
+  "id" serial,
+  "timeslot" timestamp NOT NULL,
+  "instructorId" integer NOT NULL,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "FK_AvailableTimeSlot.instructorId"
+    FOREIGN KEY ("instructorId")
+      REFERENCES "Instructor"("id")
+      ON DELETE CASCADE
+);
+
+
 
 CREATE TABLE "PricingScheme" (
   "id" serial,
@@ -114,38 +135,17 @@ CREATE TABLE "PricingScheme" (
   "discountPercentage" decimal(2,2),
   "paymentDate" timestamp,
   "lessonLevel" "lessonLevel" NOT NULL,
+  "lessonId" integer,
   PRIMARY KEY ("id"),
+  CONSTRAINT "FK_PricingScheme.lessonId"
+    FOREIGN KEY ("lessonId")
+      REFERENCES "Lesson"("id")
+      ON DELETE CASCADE,
   CHECK ("validTo" IS NULL OR "validTo" > "validFrom")
+  
 );
 
-CREATE TABLE "Lesson" (
-  "id" serial,
-  "currentAmountOfStudents" integer NOT NULL,
-  "instructorId" integer NOT NULL,
-  "roomId" integer NOT NULL,
-  "startTime" timestamp NOT NULL,
-  "endTime" timestamp NOT NULL,
-  "studentId" integer,
-  "pricingSchemeId" integer NOT NULL UNIQUE,  
-  "lessonType" "lessonType" NOT NULL,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_Lesson.instructorId"
-    FOREIGN KEY ("instructorId")
-      REFERENCES "Instructor"("id")
-      ON DELETE CASCADE,
-  CONSTRAINT "FK_Lesson.roomId"
-    FOREIGN KEY ("roomId")
-      REFERENCES "Room"("id")
-      ON DELETE CASCADE,
-  CONSTRAINT "FK_Lesson.studentId"
-    FOREIGN KEY ("studentId")
-      REFERENCES "Student"("id")
-      ON DELETE CASCADE,
-  CONSTRAINT "FK_Lesson.pricingSchemeId"
-    FOREIGN KEY ("pricingSchemeId")
-      REFERENCES "PricingScheme"("id")
-      ON DELETE CASCADE
-);
+
 
 -- Add check constraints after the Lesson table is created
 CREATE OR REPLACE FUNCTION check_lesson_type() 
