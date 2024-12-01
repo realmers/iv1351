@@ -42,7 +42,6 @@ SELECT
     sibling_count AS "No of Siblings",
     COUNT(*) AS "No of Students"
 FROM sibling_counts
-WHERE sibling_count <= 2
 GROUP BY sibling_count
 ORDER BY sibling_count;
 
