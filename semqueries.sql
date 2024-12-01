@@ -1,5 +1,5 @@
 -- Create view for lesson statistics
-CREATE VIEW lesson_statistics AS
+CREATE OR REPLACE VIEW lesson_statistics AS
 WITH monthly_counts AS (
     SELECT 
         EXTRACT(MONTH FROM "Lesson"."startTime") as month,
@@ -30,7 +30,6 @@ SELECT * FROM lesson_statistics;
 EXPLAIN ANALYZE SELECT * FROM lesson_statistics;
 
 ----------------------------------------------------------------------------------------------------------------------------
-/*CREATE VIEW sibling_statistics AS */
 CREATE OR REPLACE VIEW sibling_statistics AS
 WITH sibling_counts AS (
     SELECT 
