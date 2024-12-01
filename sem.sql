@@ -1,43 +1,82 @@
 SET search_path TO public;
 
+CREATE TYPE "lessonType" AS ENUM ('individual', 'group', 'ensemble');
+CREATE TYPE "lessonLevel" AS ENUM ('beginner', 'intermediate', 'advanced');
+
 CREATE TABLE "PersonalInformation" (
   "id" serial,
-  "personNumber" varchar(12) UNIQUE,
-  "firstName" varchar(100),
-  "lastName" varchar(100),
-  "address" varchar(200),
-  "email" varchar(100) UNIQUE,
+  "personNumber" varchar(12) UNIQUE NOT NULL,
+  "firstName" varchar(100) NOT NULL,
+  "lastName" varchar(100) NOT NULL,
+  "address" varchar(200) NOT NULL,
+  "email" varchar(100) UNIQUE NOT NULL,
   PRIMARY KEY ("id")
 );
 
-CREATE TYPE student_level_enum AS ENUM ('beginner', 'intermediate', 'advanced');
-
-CREATE TABLE "StudentLevel" (
+CREATE TABLE "Room" (
   "id" serial,
-  "level" student_level_enum,
+  "name" text NOT NULL,
+  "capacity" integer NOT NULL,
+  "location" text NOT NULL,
   PRIMARY KEY ("id")
+);
+
+
+CREATE TABLE "LessonCapacity" (
+  "id" serial,
+  "minimumAmountOfStudents" integer NOT NULL,
+  "maximumAmountOfStudents" integer NOT NULL,
+  PRIMARY KEY ("id")
+);
+CREATE TABLE "Instructor" (
+  "id" serial,
+  "personalInformationId" integer NOT NULL,
+  "canTeachEnsemble" boolean NOT NULL,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "FK_Instructor.personalInformationId"
+    FOREIGN KEY ("personalInformationId")
+      REFERENCES "PersonalInformation"("id")
+      ON DELETE CASCADE
+);
+CREATE TABLE "Lesson" (
+  "id" serial,
+  "currentAmountOfStudents" integer NOT NULL,
+  "instructorId" integer NOT NULL,
+  "roomId" integer NOT NULL,
+  "startTime" timestamp NOT NULL,
+  "endTime" timestamp NOT NULL,
+  "lessonType" "lessonType" NOT NULL,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "FK_Lesson.instructorId"
+    FOREIGN KEY ("instructorId")
+      REFERENCES "Instructor"("id")
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_Lesson.roomId"
+    FOREIGN KEY ("roomId")
+      REFERENCES "Room"("id")
+      ON DELETE CASCADE
 );
 
 CREATE TABLE "Student" (
   "id" serial,
   "siblingId" integer,
-  "levelId" integer,
-  "personalInformationId" integer,
+  "personalInformationId" integer NOT NULL,
+  "lessonId" integer NOT NULL,
   PRIMARY KEY ("id"),
-  CONSTRAINT "FK_Student.levelId"
-    FOREIGN KEY ("levelId")
-      REFERENCES "StudentLevel"("id")
-      ON DELETE CASCADE,
   CONSTRAINT "FK_Student.personalInformationId"
     FOREIGN KEY ("personalInformationId")
       REFERENCES "PersonalInformation"("id")
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_Student.lessonId"
+    FOREIGN KEY ("lessonId")
+      REFERENCES "Lesson"("id")
       ON DELETE CASCADE
 );
 
 CREATE TABLE "ContactPerson" (
   "id" serial,
-  "studentId" integer,
-  "personalInformationId" integer,
+  "studentId" integer NOT NULL,
+  "personalInformationId" integer NOT NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_ContactPerson.studentId"
     FOREIGN KEY ("studentId")
@@ -49,20 +88,12 @@ CREATE TABLE "ContactPerson" (
       ON DELETE CASCADE
 );
 
-CREATE TABLE "Instructor" (
-  "id" serial,
-  "personalInformationId" integer,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_Instructor.personalInformationId"
-    FOREIGN KEY ("personalInformationId")
-      REFERENCES "PersonalInformation"("id")
-      ON DELETE CASCADE
-);
+
 
 CREATE TABLE "AvailableTimeSlot" (
   "id" serial,
-  "timeslot" timestamp,
-  "instructorId" integer,
+  "timeslot" timestamp NOT NULL,
+  "instructorId" integer NOT NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_AvailableTimeSlot.instructorId"
     FOREIGN KEY ("instructorId")
@@ -70,75 +101,68 @@ CREATE TABLE "AvailableTimeSlot" (
       ON DELETE CASCADE
 );
 
-CREATE TABLE "InstructorPayment" (
-  "id" serial,
-  "paymentDate" date,
-  "amount" real,
-  "instructorId" integer,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_InstructorPayment.instructorId"
-    FOREIGN KEY ("instructorId")
-      REFERENCES "Instructor"("id")
-      ON DELETE CASCADE
-);
 
-CREATE TABLE "Room" (
-  "id" serial,
-  "name" text,
-  "capacity" integer,
-  "location" text,
-  PRIMARY KEY ("id")
-);
-
-
-CREATE TABLE "LessonCapacity" (
-  "id" serial,
-  "minimumAmountOfStudents" integer,
-  "maximumAmountOfStudents" integer,
-  PRIMARY KEY ("id")
-);
 
 CREATE TABLE "PricingScheme" (
   "id" serial,
-  "price" decimal(10,2),
+  "amount" decimal(10,2) NOT NULL,
   "validFrom" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "validTo" timestamp,
+  "lessonType" "lessonType" NOT NULL,
+  "discountPercentage" decimal(2,2),
+  "paymentDate" timestamp,
+  "lessonLevel" "lessonLevel" NOT NULL,
+  "lessonId" integer,
   PRIMARY KEY ("id"),
+  CONSTRAINT "FK_PricingScheme.lessonId"
+    FOREIGN KEY ("lessonId")
+      REFERENCES "Lesson"("id")
+      ON DELETE CASCADE,
   CHECK ("validTo" IS NULL OR "validTo" > "validFrom")
+  
 );
 
-CREATE TABLE "Lesson" (
-  "id" serial,
-  "currentAmountOfStudents" integer,
-  "instructorId" integer,
-  "roomId" integer,
-  "startTime" timestamp,
-  "endTime" timestamp,
-  "studentId" integer,
-  "levelId" integer,
-  "pricingSchemeId" integer UNIQUE NOT NULL,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_Lesson.instructorId"
-    FOREIGN KEY ("instructorId")
-      REFERENCES "Instructor"("id")
-      ON DELETE CASCADE,
-  CONSTRAINT "FK_Lesson.roomId"
-    FOREIGN KEY ("roomId")
-      REFERENCES "Room"("id")
-      ON DELETE CASCADE,
-  CONSTRAINT "FK_Lesson.studentId"
-    FOREIGN KEY ("studentId")
-      REFERENCES "Student"("id")
-      ON DELETE CASCADE,
-  CONSTRAINT "FK_Lesson.levelId"
-    FOREIGN KEY ("levelId")
-      REFERENCES "StudentLevel"("id")
-      ON DELETE CASCADE,
-  CONSTRAINT "FK_Lesson.pricingSchemeId"
-    FOREIGN KEY ("pricingSchemeId")
-      REFERENCES "PricingScheme"("id")
-      ON DELETE CASCADE
-);
+
+
+-- Add check constraints after the Lesson table is created
+CREATE OR REPLACE FUNCTION check_lesson_type() 
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Get the lesson type from the inserted/updated record
+    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+        IF NEW."lessonType"::text = 'individual' AND EXISTS (
+            SELECT 1 FROM "Group" g WHERE g."lessonId" = NEW."id"
+            UNION
+            SELECT 1 FROM "Ensemble" e WHERE e."lessonId" = NEW."id"
+        ) THEN
+            RAISE EXCEPTION 'Individual lesson cannot be a group or ensemble lesson';
+        END IF;
+
+        IF NEW."lessonType"::text = 'group' AND EXISTS (
+            SELECT 1 FROM "Individual" i WHERE i."lessonId" = NEW."id"
+            UNION
+            SELECT 1 FROM "Ensemble" e WHERE e."lessonId" = NEW."id"
+        ) THEN
+            RAISE EXCEPTION 'Group lesson cannot be an individual or ensemble lesson';
+        END IF;
+
+        IF NEW."lessonType"::text = 'ensemble' AND EXISTS (
+            SELECT 1 FROM "Individual" i WHERE i."lessonId" = NEW."id"
+            UNION
+            SELECT 1 FROM "Group" g WHERE g."lessonId" = NEW."id"
+        ) THEN
+            RAISE EXCEPTION 'Ensemble lesson cannot be an individual or group lesson';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER enforce_lesson_type
+BEFORE INSERT OR UPDATE ON "Lesson"
+FOR EACH ROW
+EXECUTE FUNCTION check_lesson_type();
 
 CREATE TABLE "Individual"(
   "id" serial,
@@ -152,15 +176,15 @@ CREATE TABLE "Individual"(
 
 CREATE TABLE "Ensemble" (
   "id" serial,
-  "genre" varchar(32),
+  "genre" varchar(32) NOT NULL,
   "lessonCapacityId" integer,
-  "lessonId" integer,
+  "lessonId" integer UNIQUE,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_Ensemble.lessonCapacityId"
     FOREIGN KEY ("lessonCapacityId")
       REFERENCES "LessonCapacity"("id")
       ON DELETE CASCADE,
-  CONSTRAINT "FK_Individual.lessonId"
+  CONSTRAINT "FK_Ensemble.lessonId"
     FOREIGN KEY ("lessonId")
       REFERENCES "Lesson"("id")
       ON DELETE CASCADE
@@ -169,123 +193,88 @@ CREATE TABLE "Ensemble" (
 CREATE TABLE "Group" (
   "id" serial,
   "lessonCapacityId" integer,
-  "lessonId" integer,
+  "lessonId" integer UNIQUE,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_Group.lessonCapacityId"
     FOREIGN KEY ("lessonCapacityId")
       REFERENCES "LessonCapacity"("id")
       ON DELETE CASCADE,
-  CONSTRAINT "FK_Individual.lessonId"
+  CONSTRAINT "FK_Group.lessonId"
     FOREIGN KEY ("lessonId")
       REFERENCES "Lesson"("id")
       ON DELETE CASCADE
 );
 
--- Trigger function: check_lesson_type
--- Purpose: Ensures correct lesson type and reference combinations
--- When: Runs before INSERT or UPDATE on Lesson table
--- What it does: Raises an exception if the lesson type and references are not consistent
-CREATE OR REPLACE FUNCTION check_lesson_type()
+-- Add trigger function to validate lesson types
+CREATE OR REPLACE FUNCTION validate_lesson_type()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW."lessonType" = 'individual' AND EXISTS (SELECT 1 FROM "GroupLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Individual lesson cannot have a group lesson reference';
-    ELSIF NEW."lessonType" = 'individual' AND EXISTS (SELECT 1 FROM "EnsembleLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Individual lesson cannot have an ensemble lesson reference';
-    ELSIF NEW."lessonType" = 'group' AND NOT EXISTS (SELECT 1 FROM "GroupLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Group lesson must have a group lesson reference';
-    ELSIF NEW."lessonType" = 'group' AND EXISTS (SELECT 1 FROM "EnsembleLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Group lesson cannot have an ensemble lesson reference';
-    ELSIF NEW."lessonType" = 'ensemble' AND NOT EXISTS (SELECT 1 FROM "EnsembleLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Ensemble lesson must have an ensemble lesson reference';
-    ELSIF NEW."lessonType" = 'ensemble' AND EXISTS (SELECT 1 FROM "GroupLesson" WHERE "lessonId" = NEW."id") THEN
-        RAISE EXCEPTION 'Ensemble lesson cannot have a group lesson reference';
+    IF TG_TABLE_NAME = 'Individual' THEN
+        IF NOT EXISTS (SELECT 1 FROM "Lesson" WHERE "id" = NEW."lessonId" AND "lessonType" = 'individual') THEN
+            RAISE EXCEPTION 'Lesson must be of type individual';
+        END IF;
+    ELSIF TG_TABLE_NAME = 'Group' THEN
+        IF NOT EXISTS (SELECT 1 FROM "Lesson" WHERE "id" = NEW."lessonId" AND "lessonType" = 'group') THEN
+            RAISE EXCEPTION 'Lesson must be of type group';
+        END IF;
+    ELSIF TG_TABLE_NAME = 'Ensemble' THEN
+        IF NOT EXISTS (SELECT 1 FROM "Lesson" WHERE "id" = NEW."lessonId" AND "lessonType" = 'ensemble') THEN
+            RAISE EXCEPTION 'Lesson must be of type ensemble';
+        END IF;
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER enforce_lesson_type
-BEFORE INSERT OR UPDATE ON "Lesson"
+-- Create triggers for each table
+CREATE TRIGGER validate_individual_lesson
+BEFORE INSERT OR UPDATE ON "Individual"
 FOR EACH ROW
-EXECUTE FUNCTION check_lesson_type();
+EXECUTE FUNCTION validate_lesson_type();
 
--- Trigger function: check_group_lesson_enrollment
--- Purpose: Prevents scheduling group lessons that don't meet minimum student requirements
--- When: Runs before INSERT or UPDATE on Lesson table
--- What it does: Raises an exception if trying to create/modify a group lesson
---              with fewer students than the minimum required for that group
-CREATE OR REPLACE FUNCTION check_group_lesson_enrollment()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW."lessonType" = 'group' AND NEW."currentAmountOfStudents" < (
-        SELECT "minimumAmountOfStudents"
-        FROM "LessonCapacity"
-        WHERE "id" = (
-          SELECT "lessonCapacityId"
-          FROM "Group"
-          WHERE "id" = NEW."GroupId"
-        )
-    ) THEN
-        RAISE EXCEPTION 'Group lesson cannot be scheduled with fewer students than the minimum requirement';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER enforce_group_lesson_minimum
-BEFORE INSERT OR UPDATE ON "Lesson"
+CREATE TRIGGER validate_group_lesson
+BEFORE INSERT OR UPDATE ON "Group"
 FOR EACH ROW
-EXECUTE FUNCTION check_group_lesson_enrollment();
+EXECUTE FUNCTION validate_lesson_type();
 
--- Pricing constraints:
--- Ensures end date is always after start date for pricing periods
-CREATE TABLE "StudentPayment" (
-  "id" serial,
-  "studentId" integer,
-  "discountPercentage" real,
-  "paymentDate" date,
-  "amount" real,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_StudentPayment.studentId"
-    FOREIGN KEY ("studentId")
-      REFERENCES "Student"("id")
-      ON DELETE CASCADE
-);
+CREATE TRIGGER validate_ensemble_lesson
+BEFORE INSERT OR UPDATE ON "Ensemble"
+FOR EACH ROW
+EXECUTE FUNCTION validate_lesson_type();
 
 -- Renting constraints:
 -- 1. Ensures rental end date is after start date
 -- 2. Limits rental duration to maximum of 12 months
+CREATE TABLE "AvailableInstrument" (
+  "id" serial,
+  "instrumentType" varchar(50) NOT NULL,
+  "instrumentBrand" varchar(50) NOT NULL,
+  "instrumentQuantity" integer NOT NULL,
+  PRIMARY KEY ("id"),
+  CHECK ("instrumentQuantity" >= 0)
+);
+
 CREATE TABLE "RentingInstrument" (
   "id" serial,
-  "studentId" integer,
-  "startTime" timestamp,
-  "endTime" timestamp,
-  "monthlyFee" decimal(10,2),
+  "studentId" integer NOT NULL,
+  "availableInstrumentId" integer NOT NULL,
+  "startTime" timestamp NOT NULL,
+  "endTime" timestamp NOT NULL,
+  "monthlyFee" decimal(10,2) NOT NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "FK_RentingInstrument.studentId"
     FOREIGN KEY ("studentId")
       REFERENCES "Student"("id")
+      ON DELETE CASCADE,
+  CONSTRAINT "FK_RentingInstrument.availableInstrumentId"
+    FOREIGN KEY ("availableInstrumentId")
+      REFERENCES "AvailableInstrument"("id")
       ON DELETE CASCADE,
   CHECK ("endTime" > "startTime"),
   CHECK (
     EXTRACT(YEAR FROM AGE("endTime", "startTime")) * 12 +
     EXTRACT(MONTH FROM AGE("endTime", "startTime")) <= 12
   )
-);
-
-CREATE TABLE "AvailableInstrument" (
-  "id" serial,
-  "instrumentType" varchar(50),
-  "instrumentBrand" varchar(50),
-  "instrumentQuantity" integer,
-  "rentingInstrumentId" integer,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "FK_AvailableInstrument.rentingInstrumentId"
-    FOREIGN KEY ("rentingInstrumentId")
-      REFERENCES "RentingInstrument"("id")
-      ON DELETE CASCADE,
-  CHECK ("instrumentQuantity" >= 0)
 );
 
 -- Trigger function: check_instrument_limit
@@ -299,7 +288,7 @@ BEGIN
     IF (
         SELECT COUNT(*)
         FROM "RentingInstrument" ri
-        JOIN "AvailableInstrument" ai ON ri."id" = ai."rentingInstrumentId"
+        JOIN "AvailableInstrument" ai ON ri."availableInstrumentId" = ai."id"
         WHERE ri."studentId" = NEW."studentId"
         AND CURRENT_DATE BETWEEN ri."startTime" AND ri."endTime"
     ) >= 2 THEN
