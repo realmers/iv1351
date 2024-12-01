@@ -1,7 +1,6 @@
 --- PostgresSQL
--- Only INSERT statements are allowed in this file
 
--- Insert dummy data into PersonalInformation with explicit IDs
+-- Insert dummy data into PersonalInformation
 INSERT INTO "PersonalInformation" ("id", "personNumber", "firstName", "lastName", "address", "email") VALUES
 (1, '123456789012', 'John', 'Doe', '123 Main St', 'john.doe@example.com'),
 (2, '234567890123', 'Jane', 'Smith', '456 Elm St', 'jane.smith@example.com'),
@@ -10,7 +9,7 @@ INSERT INTO "PersonalInformation" ("id", "personNumber", "firstName", "lastName"
 (5, '567890123456', 'Charlie', 'Davis', '202 Birch St', 'charlie.davis@example.com'),
 (6, '678901234567', 'Diana', 'Evans', '303 Cedar St', 'diana.evans@example.com');
 
--- Insert dummy data into Instructor with explicit IDs
+-- Insert dummy data into Instructor
 INSERT INTO "Instructor" ("id", "personalInformationId", "canTeachEnsemble") VALUES
 (1, 1, true),
 (2, 2, false),
@@ -19,7 +18,7 @@ INSERT INTO "Instructor" ("id", "personalInformationId", "canTeachEnsemble") VAL
 (5, 5, true),
 (6, 6, false);
 
--- Insert dummy data into Room with explicit IDs
+-- Insert dummy data into Room
 INSERT INTO "Room" ("id", "name", "capacity", "location") VALUES
 (1, 'Room A', 30, 'Building 1'),
 (2, 'Room B', 20, 'Building 2'),
@@ -28,7 +27,7 @@ INSERT INTO "Room" ("id", "name", "capacity", "location") VALUES
 (5, 'Room E', 35, 'Building 5'),
 (6, 'Room F', 10, 'Building 6');
 
--- Insert dummy data into Lesson with various dates and types
+-- Insert dummy data into Lesson
 INSERT INTO "Lesson" ("id", "currentAmountOfStudents", "instructorId", "roomId", "startTime", "endTime", "lessonType") VALUES
 -- October lessons
 (1, 1, 1, 1, '2024-10-01 09:00:00', '2024-10-01 10:00:00', 'ensemble'),
@@ -52,16 +51,16 @@ INSERT INTO "Lesson" ("id", "currentAmountOfStudents", "instructorId", "roomId",
 (17, 6, 1, 1, '2024-12-02 18:00:00', '2024-12-02 20:00:00', 'ensemble'),
 (18, 2, 2, 1, '2024-12-03 10:00:00', '2024-12-03 11:00:00', 'ensemble');
 
--- Insert dummy data into Student with explicit IDs
+-- Insert dummy data into Student
 INSERT INTO "Student" ("id", "personalInformationId", "siblingId", "lessonId") VALUES
-(1, 1, 1, 1),
+(1, 1, 1, 1), 
 (2, 2, 2, 2),
-(3, 3, 3, 3),
-(4, 4, 4, 4),
-(5, 5, 5, 5),
-(6, 6, 6, 6);
+(3, 3, 3, 3), 
+(4, 4, 3, 4), 
+(5, 5, 2, 5),
+(6, 6, 2, 6);
 
--- Insert historical pricing data first with explicit IDs
+-- Insert PricingScheme data
 INSERT INTO "PricingScheme" ("id", "amount", "validFrom", "validTo", "lessonType", "discountPercentage", "paymentDate", "lessonLevel", "lessonId") VALUES
 (1, 300.00, '2024-01-01 00:00:00', '2024-07-01 00:00:00', 'individual', 0.00, '2024-01-01 00:00:00', 'beginner', 5),
 (2, 350.00, '2024-07-01 00:00:00', '2024-10-01 00:00:00', 'group', 0.00, '2024-07-01 00:00:00', 'intermediate', 3),
@@ -99,6 +98,9 @@ INSERT INTO "LessonCapacity" ("id", "minimumAmountOfStudents", "maximumAmountOfS
 (2, 3, 10), 
 (3, 4, 7),
 (4, 2, 6),
+(5, 2, 5),
+(6, 3, 8), 
+(7, 4, 10),
 (8, 3, 8);
 
 INSERT INTO "Ensemble" ("id", "genre", "lessonCapacityId", "lessonId") VALUES
@@ -108,12 +110,6 @@ INSERT INTO "Ensemble" ("id", "genre", "lessonCapacityId", "lessonId") VALUES
 (4, 'Rock', 8, 17),
 (5, 'Pop', 2, 18);
 
--- Insert group lesson configurations
-INSERT INTO "LessonCapacity" ("id", "minimumAmountOfStudents", "maximumAmountOfStudents") VALUES
-(5, 2, 5), 
-(6, 3, 8), 
-(7, 4, 10);
-
 -- Adjust Group data to match model
 INSERT INTO "Group" ("id", "lessonCapacityId", "lessonId") VALUES
 (1, 5, 3),
@@ -121,7 +117,7 @@ INSERT INTO "Group" ("id", "lessonCapacityId", "lessonId") VALUES
 (3, 7, 8),
 (4, 5, 15);
 
--- First insert the available instruments without rental references
+-- First insert the available instruments
 INSERT INTO "AvailableInstrument" ("id", "instrumentType", "instrumentBrand", "instrumentQuantity") VALUES
 (1, 'Guitar', 'Yamaha', 5),
 (2, 'Piano', 'Steinway', 2),
@@ -130,7 +126,7 @@ INSERT INTO "AvailableInstrument" ("id", "instrumentType", "instrumentBrand", "i
 (5, 'Flute', 'Armstrong', 6),
 (6, 'Saxophone', 'Selmer', 3);
 
--- Insert dummy data into RentingInstrument with updated fields
+-- Insert dummy data into RentingInstrument
 INSERT INTO "RentingInstrument" ("id", "studentId", "availableInstrumentId", "startTime", "endTime", "monthlyFee") VALUES
 (1, 1, 1, '2024-10-01', '2025-04-01', 150.00),
 (2, 2, 2, '2024-10-02', '2025-03-02', 200.00),
