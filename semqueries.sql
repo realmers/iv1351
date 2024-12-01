@@ -1,4 +1,10 @@
--- Create view for lesson statistics
+/*
+ * lesson_statistics view
+ * Purpose: Shows monthly lesson counts for the year 2024, broken down by lesson type
+ * - Aggregates lessons by month and type (individual, group, ensemble)
+ * - Converts month numbers to month names for readability
+ * - Shows total lessons and subtotals for each lesson type
+ */
 CREATE OR REPLACE VIEW lesson_statistics AS
 WITH monthly_counts AS (
     SELECT 
@@ -30,6 +36,13 @@ SELECT * FROM lesson_statistics;
 EXPLAIN ANALYZE SELECT * FROM lesson_statistics;
 
 ----------------------------------------------------------------------------------------------------------------------------
+/*
+ * sibling_statistics view
+ * Purpose: Provides statistics about sibling relationships among students
+ * - Groups students by their sibling relationships
+ * - Counts how many students have 0, 1, 2, or more siblings
+ * - Shows the distribution of sibling group sizes in the school
+ */
 CREATE OR REPLACE VIEW sibling_statistics AS
 WITH sibling_counts AS (
     SELECT 
@@ -51,7 +64,14 @@ EXPLAIN ANALYZE SELECT * FROM sibling_statistics;
 
 ----------------------------------------------------------------------------------------------------------------------
 
--- Create view for instructors with high lesson counts
+/*
+ * instructor_lesson_count view
+ * Purpose: Identifies instructors with high teaching workload in the current month
+ * - Counts lessons per instructor for the current month
+ * - Includes only instructors with more than 1 lesson
+ * - Shows instructor details and their lesson count
+ * - Useful for workload analysis and resource planning
+ */
 CREATE OR REPLACE VIEW instructor_lesson_count AS
 WITH monthly_instructor_lessons AS (
     SELECT 
@@ -82,7 +102,14 @@ EXPLAIN ANALYZE SELECT * FROM instructor_lesson_count;
 
 ----------------------------------------------------------------------------------------------------------------------------
 
--- Create view for ensemble schedule and availability
+/*
+ * ensemble_schedule view
+ * Purpose: Displays upcoming ensemble lessons for the next 7 days with seat availability
+ * - Shows day of week and genre for each ensemble
+ * - Calculates and categorizes available seats (No Seats, 1-2 Seats, Many Seats)
+ * - Ordered by day of week and genre
+ * - Helps students find and register for available ensemble lessons
+ */
 CREATE OR REPLACE VIEW ensemble_schedule AS
 WITH ensemble_details AS (
     SELECT 
