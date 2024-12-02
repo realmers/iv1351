@@ -48,8 +48,9 @@ INSERT INTO "Lesson" ("id", "currentAmountOfStudents", "instructorId", "roomId",
 (14, 1, 2, 2, '2024-12-22 11:00:00', '2024-12-22 12:00:00', 'individual'),
 (15, 4, 3, 3, '2024-12-21 13:00:00', '2024-12-21 14:00:00', 'group'),
 (16, 3, 3, 3, '2024-12-22 13:00:00', '2024-12-22 14:00:00', 'ensemble'),
-(17, 6, 1, 1, '2024-12-02 18:00:00', '2024-12-02 20:00:00', 'ensemble'),
-(18, 2, 2, 1, '2024-12-03 10:00:00', '2024-12-03 11:00:00', 'ensemble');
+(17, 6, 1, 1, '2024-12-03 18:00:00', '2024-12-02 20:00:00', 'ensemble'),
+(18, 2, 2, 1, '2024-12-04 10:00:00', '2024-12-03 11:00:00', 'ensemble'),
+(19, 8, 2, 1, '2024-12-05 10:00:00', '2024-12-03 11:00:00', 'ensemble');
 
 -- Insert dummy data into Student
 INSERT INTO "Student" ("id", "personalInformationId", "siblingId", "lessonId") VALUES
@@ -101,14 +102,16 @@ INSERT INTO "LessonCapacity" ("id", "minimumAmountOfStudents", "maximumAmountOfS
 (5, 2, 5),
 (6, 3, 8), 
 (7, 4, 10),
-(8, 3, 8);
+(8, 3, 8),
+(9, 3, 8);
 
 INSERT INTO "Ensemble" ("id", "genre", "lessonCapacityId", "lessonId") VALUES
 (1, 'Classical', 1, 1),
 (2, 'Jazz', 2, 2),
 (3, 'Rock', 1, 16),
 (4, 'Rock', 8, 17),
-(5, 'Pop', 2, 18);
+(5, 'Pop', 2, 18),
+(6, 'Jazz', 9, 19);
 
 -- Adjust Group data to match model
 INSERT INTO "Group" ("id", "lessonCapacityId", "lessonId") VALUES
