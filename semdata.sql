@@ -61,25 +61,41 @@ INSERT INTO "Student" ("id", "personalInformationId", "siblingId", "lessonId") V
 (5, 5, 2, 5),
 (6, 6, 2, 6);
 
--- Insert PricingScheme data
-INSERT INTO "PricingScheme" ("id", "amount", "validFrom", "validTo", "lessonType", "discountPercentage", "paymentDate", "lessonLevel", "lessonId") VALUES
-(1, 300.00, '2024-01-01 00:00:00', '2024-07-01 00:00:00', 'individual', 0.00, '2024-01-01 00:00:00', 'beginner', 5),
-(2, 350.00, '2024-07-01 00:00:00', '2024-10-01 00:00:00', 'group', 0.00, '2024-07-01 00:00:00', 'intermediate', 3),
-(3, 400.00, '2024-10-01 00:00:00', '2024-12-01 00:00:00', 'ensemble', 0.00, '2025-10-01 00:00:00', 'advanced', 1),
-(4, 320.00, '2024-01-01 00:00:00', '2024-07-01 00:00:00', 'individual', 0.00, '2024-01-01 00:00:00', 'intermediate', 6),
-(5, 370.00, '2024-07-01 00:00:00', '2024-10-01 00:00:00', 'group', 0.00, '2024-07-01 00:00:00', 'advanced', 4),
-(6, 420.00, '2024-10-01 00:00:00', '2024-12-01 00:00:00', 'ensemble', 0.00, '2025-10-01 00:00:00', 'beginner', 2),
-(7, 340.00, '2024-01-01 00:00:00', '2024-07-01 00:00:00', 'individual', 0.00, '2024-01-01 00:00:00', 'advanced', 7),
-(8, 360.00, '2024-07-01 00:00:00', '2024-10-01 00:00:00', 'group', 0.00, '2024-07-01 00:00:00', 'beginner', 8),
-(9, 410.00, '2024-10-01 00:00:00', '2024-12-01 00:00:00', 'ensemble', 0.00, '2025-10-01 00:00:00', 'intermediate', 9),
-(10, 330.00, '2024-01-01 00:00:00', '2024-07-01 00:00:00', 'individual', 0.00, '2024-01-01 00:00:00', 'beginner', 10),
-(11, 300.00, '2024-12-01 00:00:00', '2025-01-01 00:00:00', 'individual', 0.00, '2024-12-01 00:00:00', 'beginner', 11),
-(12, 320.00, '2024-12-01 00:00:00', '2025-01-01 00:00:00', 'individual', 0.00, '2024-12-01 00:00:00', 'intermediate', 12),
-(13, 340.00, '2024-12-01 00:00:00', '2025-01-01 00:00:00', 'individual', 0.00, '2024-12-01 00:00:00', 'advanced', 13),
-(14, 300.00, '2024-12-01 00:00:00', '2025-01-01 00:00:00', 'individual', 0.00, '2024-12-01 00:00:00', 'beginner', 14),
-(15, 350.00, '2024-12-01 00:00:00', '2025-01-01 00:00:00', 'group', 0.00, '2024-12-01 00:00:00', 'intermediate', 15),
-(16, 400.00, '2024-12-01 00:00:00', '2025-01-01 00:00:00', 'ensemble', 0.00, '2024-12-01 00:00:00', 'advanced', 16),
-(17, 400.00, '2024-12-01 00:00:00', '2025-01-01 00:00:00', 'ensemble', 0.00, '2024-12-01 00:00:00', 'intermediate', 17);
+-- Insert PricingScheme data with updated structure
+INSERT INTO "PricingScheme" ("id", "validFrom", "validTo", "lessonLevel", "lessonId", "discountPercentage") VALUES
+(1, '2024-01-01 00:00:00', '2024-07-01 00:00:00', 'beginner', 5, 0.00),
+(2, '2024-07-01 00:00:00', '2024-10-01 00:00:00', 'intermediate', 3, 0.00),
+(3, '2024-10-01 00:00:00', '2024-12-01 00:00:00', 'advanced', 1, 0.00),
+(4, '2024-01-01 00:00:00', '2024-07-01 00:00:00', 'intermediate', 6, 0.00),
+(5, '2024-07-01 00:00:00', '2024-10-01 00:00:00', 'advanced', 4, 0.00),
+(6, '2024-10-01 00:00:00', '2024-12-01 00:00:00', 'beginner', 2, 0.00);
+
+-- First insert the available instruments
+INSERT INTO "AvailableInstrument" ("id", "instrumentType", "instrumentBrand", "instrumentQuantity") VALUES
+(1, 'Guitar', 'Yamaha', 5),
+(2, 'Piano', 'Steinway', 2),
+(3, 'Violin', 'Stradivarius', 3),
+(4, 'Drum', 'Pearl', 4),
+(5, 'Flute', 'Armstrong', 6),
+(6, 'Saxophone', 'Selmer', 3);
+
+-- Insert dummy data into RentingInstrument
+INSERT INTO "RentingInstrument" ("id", "studentId", "availableInstrumentId", "startTime", "endTime") VALUES
+(1, 1, 1, '2024-10-01', '2025-04-01'),
+(2, 2, 2, '2024-10-02', '2025-03-02'),
+(3, 3, 3, '2024-10-03', '2025-02-03'),
+(4, 4, 4, '2024-10-04', '2025-01-04'),
+(5, 5, 5, '2024-10-05', '2025-05-05'),
+(6, 6, 6, '2024-10-06', '2025-06-06');
+
+-- Add MonthlyFee records
+INSERT INTO "MonthlyFee" ("id", "amount", "paymentDate", "PricingSchemeId", "RentingInstrumentId") VALUES
+(1, 300.00, '2024-01-01 00:00:00', 1, 1),
+(2, 350.00, '2024-07-01 00:00:00', 2, 2),
+(3, 400.00, '2024-10-01 00:00:00', 3, 3),
+(4, 320.00, '2024-01-01 00:00:00', 4, 4),
+(5, 370.00, '2024-07-01 00:00:00', 5, 5),
+(6, 420.00, '2024-10-01 00:00:00', 6, 6);
 
 -- Add Individual lessons
 INSERT INTO "Individual" ("id", "lessonId") VALUES
@@ -119,24 +135,6 @@ INSERT INTO "Group" ("id", "lessonCapacityId", "lessonId") VALUES
 (2, 6, 4),
 (3, 7, 8),
 (4, 5, 15);
-
--- First insert the available instruments
-INSERT INTO "AvailableInstrument" ("id", "instrumentType", "instrumentBrand", "instrumentQuantity") VALUES
-(1, 'Guitar', 'Yamaha', 5),
-(2, 'Piano', 'Steinway', 2),
-(3, 'Violin', 'Stradivarius', 3),
-(4, 'Drum', 'Pearl', 4),
-(5, 'Flute', 'Armstrong', 6),
-(6, 'Saxophone', 'Selmer', 3);
-
--- Insert dummy data into RentingInstrument
-INSERT INTO "RentingInstrument" ("id", "studentId", "availableInstrumentId", "startTime", "endTime", "monthlyFee") VALUES
-(1, 1, 1, '2024-10-01', '2025-04-01', 150.00),
-(2, 2, 2, '2024-10-02', '2025-03-02', 200.00),
-(3, 3, 3, '2024-10-03', '2025-02-03', 175.00),
-(4, 4, 4, '2024-10-04', '2025-01-04', 225.00),
-(5, 5, 5, '2024-10-05', '2025-05-05', 190.00),
-(6, 6, 6, '2024-10-06', '2025-06-06', 160.00);
 
 -- Insert dummy data into AvailableTimeSlot
 INSERT INTO "AvailableTimeSlot" ("id", "timeslot", "instructorId") VALUES
